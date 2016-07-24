@@ -16,6 +16,7 @@
 
 package com.android.gallery3d.glrenderer;
 
+import android.graphics.RectF;
 import android.util.Log;
 
 import com.android.gallery3d.common.Utils;
@@ -141,6 +142,10 @@ public abstract class BasicTexture implements Texture {
     @Override
     public void draw(GLCanvas canvas, int x, int y, int w, int h) {
         canvas.drawTexture(this, x, y, w, h);
+    }
+
+    public void draw(GLCanvas canvas, RectF source, RectF dest) {
+        canvas.drawTexture(this, source, dest);
     }
 
     // onBind is called before GLCanvas binds this texture.

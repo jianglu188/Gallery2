@@ -155,6 +155,7 @@ public class PhotoView extends GLView {
     private static final int MSG_DELETE_DONE = 6;
     private static final int MSG_UNDO_BAR_TIMEOUT = 7;
     private static final int MSG_UNDO_BAR_FULL_CAMERA = 8;
+    private static final int MSG_INVALIDATE = 9;
 
     private static final float SWIPE_THRESHOLD = 300f;
 
@@ -387,6 +388,11 @@ public class PhotoView extends GLView {
                     checkHideUndoBar(UNDO_BAR_FULL_CAMERA);
                     break;
                 }
+
+                case MSG_INVALIDATE: {
+                    PhotoView.this.invalidate();
+                    break;
+                }
                 default: throw new AssertionError(message.what);
             }
         }
@@ -597,6 +603,7 @@ public class PhotoView extends GLView {
         private boolean mIsDeletable;
         private int mLoadingState = Model.LOADING_INIT;
         private Size mSize = new Size();
+        private boolean mIsGif;
 
         @Override
         public void reload() {
@@ -655,10 +662,15 @@ public class PhotoView extends GLView {
             if (mWantPictureCenterCallbacks && mPositionController.isCenter()) {
                 mListener.onPictureCenter(mIsCamera);
             }
+            if (mIsGif) {
+                Message message = mHandler.obtainMessage(MSG_INVALIDATE);
+                mHandler.sendMessageDelayed(message, 50L);
+            }
         }
 
         @Override
         public void setScreenNail(ScreenNail s) {
+            if (s != null) this.mIsGif = (s instanceof GifScreenNail);
             mTileView.setScreenNail(s);
         }
 
@@ -847,6 +859,8 @@ public class PhotoView extends GLView {
             }
             int drawW = getRotated(mRotation, r.width(), r.height());
             int drawH = getRotated(mRotation, r.height(), r.width());
+            if ((this.mScreenNail instanceof GifScreenNail))
+                ((GifScreenNail)this.mScreenNail).startTime();
             mScreenNail.draw(canvas, -drawW / 2, -drawH / 2, drawW, drawH);
             if (isScreenNailAnimating()) {
                 invalidate();

@@ -22,12 +22,14 @@ import android.graphics.BitmapRegionDecoder;
 import android.graphics.Rect;
 import android.os.Handler;
 import android.os.Message;
+import android.text.TextUtils;
 
 import com.android.gallery3d.common.BitmapUtils;
 import com.android.gallery3d.common.Utils;
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.data.Path;
 import com.android.gallery3d.ui.BitmapScreenNail;
+import com.android.gallery3d.ui.GifScreenNail;
 import com.android.gallery3d.ui.PhotoView;
 import com.android.gallery3d.ui.ScreenNail;
 import com.android.gallery3d.ui.SynchronizedHandler;
@@ -52,9 +54,12 @@ public class SinglePhotoDataAdapter extends TileImageViewAdapter
     private ThreadPool mThreadPool;
     private int mLoadingState = LOADING_INIT;
     private BitmapScreenNail mBitmapScreenNail;
+    private GifScreenNail mGifScreenNail;
+    private AbstractGalleryActivity mActivity;
 
     public SinglePhotoDataAdapter(
             AbstractGalleryActivity activity, PhotoView view, MediaItem item) {
+        mActivity = activity;
         mItem = Utils.checkNotNull(item);
         mHasFullImage = (item.getSupportedOperations() &
                 MediaItem.SUPPORT_FULL_IMAGE) != 0;
@@ -116,6 +121,17 @@ public class SinglePhotoDataAdapter extends TileImageViewAdapter
     }
 
     private void setScreenNail(Bitmap bitmap, int width, int height) {
+        String mimeType = mItem.getMimeType();
+        if (!TextUtils.isEmpty(mimeType) && mimeType.equalsIgnoreCase("image/gif")) {
+            mGifScreenNail = new GifScreenNail(bitmap, SinglePhotoDataAdapter.this.mActivity,
+                    this.mItem.getContentUri());
+            if (mGifScreenNail.isGifPic()) {
+                setScreenNail(mGifScreenNail, width, height);
+                return;
+            }
+            mGifScreenNail.recycle();
+            mGifScreenNail = null;
+        }
         mBitmapScreenNail = new BitmapScreenNail(bitmap);
         setScreenNail(mBitmapScreenNail, width, height);
     }
@@ -172,6 +188,10 @@ public class SinglePhotoDataAdapter extends TileImageViewAdapter
         if (mBitmapScreenNail != null) {
             mBitmapScreenNail.recycle();
             mBitmapScreenNail = null;
+        }
+        if (mGifScreenNail != null) {
+            mGifScreenNail.recycle();
+            mGifScreenNail = null;
         }
     }
 

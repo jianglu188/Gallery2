@@ -20,6 +20,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapRegionDecoder;
 import android.os.Handler;
 import android.os.Message;
+import android.text.TextUtils;
 
 import com.android.gallery3d.common.BitmapUtils;
 import com.android.gallery3d.common.Utils;
@@ -30,6 +31,7 @@ import com.android.gallery3d.data.MediaObject;
 import com.android.gallery3d.data.MediaSet;
 import com.android.gallery3d.data.Path;
 import com.android.gallery3d.glrenderer.TiledTexture;
+import com.android.gallery3d.ui.GifScreenNail;
 import com.android.gallery3d.ui.PhotoView;
 import com.android.gallery3d.ui.ScreenNail;
 import com.android.gallery3d.ui.SynchronizedHandler;
@@ -163,6 +165,7 @@ public class PhotoDataAdapter implements PhotoPage.Model {
 
     private final SourceListener mSourceListener = new SourceListener();
     private final TiledTexture.Uploader mUploader;
+    private AbstractGalleryActivity mActivity;
 
     // The path of the current viewing item will be stored in mItemPath.
     // If mItemPath is not null, mCurrentIndex is only a hint for where we
@@ -172,6 +175,7 @@ public class PhotoDataAdapter implements PhotoPage.Model {
     public PhotoDataAdapter(AbstractGalleryActivity activity, PhotoView view,
             MediaSet mediaSet, Path itemPath, int indexHint, int cameraIndex,
             boolean isPanorama, boolean isStaticCamera) {
+        mActivity = activity;
         mSource = Utils.checkNotNull(mediaSet);
         mPhotoView = Utils.checkNotNull(view);
         mItemPath = Utils.checkNotNull(itemPath);
@@ -713,6 +717,15 @@ public class PhotoDataAdapter implements PhotoPage.Model {
             if (bitmap != null) {
                 bitmap = BitmapUtils.rotateBitmap(bitmap,
                     mItem.getRotation() - mItem.getFullImageRotation(), true);
+            }
+            String mimeType = mItem.getMimeType();
+            if (!TextUtils.isEmpty(mimeType) && mimeType.equalsIgnoreCase("image/gif")) {
+                GifScreenNail screenNail = new GifScreenNail(bitmap, PhotoDataAdapter.this.mActivity,
+                        this.mItem.getContentUri());
+                if (screenNail.isGifPic()) {
+                    return screenNail;
+                }
+                screenNail.recycle();
             }
             return bitmap == null ? null : new TiledScreenNail(bitmap);
         }
